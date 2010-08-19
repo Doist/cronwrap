@@ -3,6 +3,16 @@ cronwrap
 
 A cron job wrapper that wraps jobs and enables better error reporting and command timeouts.
 
+
+Installing
+===========
+
+To install cronwrap simply do::
+    
+    $ sudo easy_install cronwrap
+    $ cronwrap -h
+
+
 Example
 ===========
 
