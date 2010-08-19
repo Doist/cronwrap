@@ -1,7 +1,7 @@
 cronwrap
 ===========================================
 
-A cron job wrapper that wraps jobs and enables better error reproting and command timeouts.
+A cron job wrapper that wraps jobs and enables better error reporting and command timeouts.
 
 Example
 ===========
@@ -13,7 +13,7 @@ Basic example of usage::
 
         usage: cronwrap [-h] [-c CMD] [-e EMAILS] [-t TIME] [-v [VERBOSE]]
 
-        A cron job wrapper that wraps jobs and enables better error reproting and command timeouts.
+        A cron job wrapper that wraps jobs and enables better error reporting and command timeouts.
 
         optional arguments:
           -h, --help            show this help message and exit
@@ -30,7 +30,7 @@ Basic example of usage::
                                 1 hour `-t 1h`. Possible values include: `-t 2h`,`-t
                                 2m`, `-t 30s`.
           -v [VERBOSE], --verbose [VERBOSE]
-                                Will send an email / print to stdout on succefull run.
+                                Will send an email / print to stdout on successful run.
 
 
     ##Will send out a timeout alert to cron@my_domain.com:
@@ -42,5 +42,5 @@ Basic example of usage::
     #Will not send any reports:
     $ cronwrap -c "ls" -e cron@my_domain.com
 
-    #Will send a succefull report to cron@my_domain.com:
+    #Will send a successful report to cron@my_domain.com:
     $ cronwrap -c "ls" -e cron@my_domain.com -v

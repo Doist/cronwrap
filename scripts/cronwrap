@@ -4,7 +4,7 @@
     cronwrap
     ~~~~~~~~~~~~~~
 
-    A cron job wrapper that wraps jobs and enables better error reproting and command timeouts.
+    A cron job wrapper that wraps jobs and enables better error reporting and command timeouts.
 
     Example of usage::
         
@@ -224,7 +224,7 @@ def is_time_exceeded(sys_args, cmd):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="A cron job wrapper that wraps jobs and enables better error reproting and command timeouts.")
+    parser = argparse.ArgumentParser(description="A cron job wrapper that wraps jobs and enables better error reporting and command timeouts.")
 
     parser.add_argument('-c', '--cmd', help='Run a command. Could be `cronwrap -c "ls -la"`.')
 
@@ -232,9 +232,9 @@ if __name__ == '__main__':
                                                 'Could be `cronwrap -e "johndoe@mail.com, marcy@mail.com"`. '\
                                                 "Uses system's `mail` to send emails. If no command (cmd) is set a test email is sent.")
 
-    parser.add_argument('-t', '--time', help='Set the maxium running time.'\
+    parser.add_argument('-t', '--time', help='Set the maximum running time.'\
                                              'If this time is passed an alert email will be sent.'\
-                                             "The command will keep running even if maxium running time is exceeded."\
+                                             "The command will keep running even if maximum running time is exceeded."\
                                              "The default is 1 hour `-t 1h`. "\
                                              "Possible values include: `-t 2h`,`-t 2m`, `-t 30s`."
                                              )
