@@ -1,0 +1,246 @@
+#!/usr/bin/env python
+
+"""
+    cronwrap
+    ~~~~~~~~~~~~~~
+
+    A cron job wrapper that wraps jobs and enables better error reproting and command timeouts.
+
+    Example of usage::
+        
+        #Will print out help
+        $ cronwrap -h
+
+        #Will send out a timeout alert to cron@my_domain.com:
+        $ cronwrap -c "sleep 2" -t "1s" -e cron@my_domain.com
+
+        #Will send out an error alert to cron@my_domain.com:
+        $ cronwrap -c "blah" -t "1s" -e cron@my_domain.com
+
+        #Will not send any reports:
+        $ cronwrap -c "ls" -e cron@my_domain.com
+
+        #Will send a succefull report to cron@my_domain.com:
+        $ cronwrap -c "ls" -e cron@my_domain.com -v
+
+    :copyright: 2010 by Plurk
+    :license: BSD
+"""
+
+import sys
+import re
+import os
+import argparse
+import tempfile
+import time
+from datetime import datetime
+
+
+#--- Handlers ----------------------------------------------
+def handle_args(sys_args):
+    """Handles comamnds that are parsed via argparse."""
+    if not sys_args.time:
+        sys_args.time = '1h'
+
+    if sys_args.verbose != False:
+        sys_args.verbose = True
+
+    if sys_args.cmd:
+        cmd = Command(sys_args.cmd)
+        if cmd.returncode != 0:
+            handle_error(sys_args, cmd)
+        elif is_time_exceeded(sys_args, cmd):
+            handle_timeout(sys_args, cmd)
+        else:
+            handle_success(sys_args, cmd)
+    elif sys_args.emails:
+        handle_test_email(sys_args)
+
+
+def handle_success(sys_args, cmd):
+    """Called if a command did finish succefully."""
+    out_str = []
+    out_str.append('cronwrap ran command succefully:')
+    out_str.append('%s\n' % sys_args.cmd)
+
+    out_str.append('The command finished:')
+    out_str.append('%s UTC\n' % datetime.utcnow())
+
+    out_str.append('The command ran for:')
+    out_str.append('%s seconds\n' % cmd.run_time)
+
+    out_str.append('STANDARD OUTPUT:')
+    out_str.append('%s\n' % cmd.stdout)
+    out_str = '\n'.join(out_str)
+
+    if sys_args.verbose:
+        if sys_args.emails:
+            send_email(sys_args,
+                       sys_args.emails,
+                       'cronwrap ran command succefully!',
+                       out_str)
+        else:
+            print out_str
+
+
+def handle_timeout(sys_args, cmd):
+    """Called if a command exceeds its running time."""
+    err_str = []
+    err_str.append("cronwrap detected a timeout on following command:")
+    err_str.append(sys_args.cmd)
+    err_str.append('')
+
+    err_str.append('The command ran for:\n%s seconds' % (cmd.run_time))
+    err_str.append('')
+
+    err_str.append('The timeout is set at:\n%s' % sys_args.time)
+
+    err_str = '\n'.join(err_str)
+
+    if sys_args.emails:
+        send_email(sys_args,
+                   sys_args.emails,
+                   'cronwrap detected a timeout!',
+                   err_str)
+    else:
+        print err_str
+
+
+def handle_error(sys_args, cmd):
+    """Called when a command did not finish succefully."""
+    err_str = []
+
+    err_str.append("cronwrap detected failure or error output for the command:")
+    err_str.append(sys_args.cmd)
+
+    err_str.append('')
+
+    err_str.append('RETURN CODE:')
+    err_str.append('%s' % cmd.returncode)
+
+    err_str.append('')
+
+    err_str.append('ERROR OUTPUT:')
+    err_str.append('%s' % cmd.stderr.strip())
+
+    err_str.append('')
+
+    err_str.append('STANDARD OUTPUT:')
+    err_str.append('%s' % cmd.stdout.strip())
+
+    err_str = '\n'.join(err_str)
+
+    if sys_args.emails:
+        send_email(sys_args,
+                   sys_args.emails,
+                   'cronwrap detected a failure!',
+                   err_str)
+    else:
+        print err_str
+
+    sys.exit(-1)
+
+
+def handle_test_email(sys_args):
+    send_email(sys_args,
+               sys_args.emails,
+               'cronwrap test mail',
+               'just a test mail, yo! :)')
+
+
+#--- Util ----------------------------------------------
+class Command:
+
+    """Runs a command, only works on Unix.
+
+       Example of usage::
+
+           cmd = Command('ls')
+           print cmd.stdout
+           print cmd.stderr
+           print cmd.returncode
+           print cmd.run_time
+    """
+    def __init__(self, command):
+        outfile = tempfile.mktemp()
+        errfile = tempfile.mktemp()
+
+        t_start = time.time()
+
+        self.returncode = os.system("( %s ) > %s 2> %s" %
+                                    (command, outfile, errfile)) >> 8
+        self.run_time = time.time() - t_start
+        self.stdout = open(outfile, "r").read()
+        self.stderr = open(errfile, "r").read()
+
+        os.remove(outfile)
+        os.remove(errfile)
+
+
+def send_email(sys_args, emails, subject, message):
+    """Sends an email via `mail`."""
+    emails = emails.split(',')
+
+    err_report = tempfile.mktemp()
+    fp_err_report = open(err_report, "w")
+    fp_err_report.write(message)
+    fp_err_report.close()
+
+    try:
+        for email in emails:
+            cmd = Command('mail -s "%s" %s < %s' %\
+                        (subject.replace('"', "'"),
+                         email,
+                         err_report)
+            )
+
+            if sys_args.verbose:
+                if cmd.returncode == 0:
+                    print 'Sent an email to %s' % email
+                else:
+                    print 'Could not send an email to %s' % email
+                    print cmd.stderr
+    finally:
+        os.remove(err_report)
+
+
+def is_time_exceeded(sys_args, cmd):
+    """Returns `True` if the command's run time has exceeded the maximum
+    run time specified in command arguments. Else `False  is returned."""
+    cmd_time = int(cmd.run_time)
+
+    #Parse sys_args.time
+    max_time = sys_args.time
+    sp = re.match("(\d+)([hms])", max_time).groups()
+    t_val, t_unit = int(sp[0]), sp[1]
+
+    #Convert time to seconds
+    if t_unit == 'h':
+        t_val = t_val * 60 * 60
+    elif t_unit == 'm':
+        t_val = t_val * 60
+
+    return cmd_time > t_val
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="A cron job wrapper that wraps jobs and enables better error reproting and command timeouts.")
+
+    parser.add_argument('-c', '--cmd', help='Run a command. Could be `cronwrap -c "ls -la"`.')
+
+    parser.add_argument('-e', '--emails', help='Email following users if the command crashes or exceeds timeout. '\
+                                                'Could be `cronwrap -e "johndoe@mail.com, marcy@mail.com"`. '\
+                                                "Uses system's `mail` to send emails. If no command (cmd) is set a test email is sent.")
+
+    parser.add_argument('-t', '--time', help='Set the maxium running time.'\
+                                             'If this time is passed an alert email will be sent.'\
+                                             "The command will keep running even if maxium running time is exceeded."\
+                                             "The default is 1 hour `-t 1h`. "\
+                                             "Possible values include: `-t 2h`,`-t 2m`, `-t 30s`."
+                                             )
+
+    parser.add_argument('-v', '--verbose',
+                             nargs='?', default=False,
+                             help='Will send an email / print to stdout on succefull run.')
+
+    handle_args(parser.parse_args())
