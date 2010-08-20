@@ -70,7 +70,7 @@ def handle_success(sys_args, cmd):
     out_str.append('%s seconds\n' % cmd.run_time)
 
     out_str.append('STANDARD OUTPUT:')
-    out_str.append('%s\n' % cmd.stdout)
+    out_str.append('%s\n' % trim_if_needed(cmd.stdout))
     out_str = '\n'.join(out_str)
 
     if sys_args.verbose:
@@ -121,12 +121,12 @@ def handle_error(sys_args, cmd):
     err_str.append('')
 
     err_str.append('ERROR OUTPUT:')
-    err_str.append('%s' % cmd.stderr.strip())
+    err_str.append('%s' % trim_if_needed(cmd.stderr))
 
     err_str.append('')
 
     err_str.append('STANDARD OUTPUT:')
-    err_str.append('%s' % cmd.stdout.strip())
+    err_str.append('%s' % trim_if_needed(cmd.stdout))
 
     err_str = '\n'.join(err_str)
 
@@ -170,8 +170,8 @@ class Command:
         self.returncode = os.system("( %s ) > %s 2> %s" %
                                     (command, outfile, errfile)) >> 8
         self.run_time = time.time() - t_start
-        self.stdout = open(outfile, "r").read()
-        self.stderr = open(errfile, "r").read()
+        self.stdout = open(outfile, "r").read().strip()
+        self.stderr = open(errfile, "r").read().strip()
 
         os.remove(outfile)
         os.remove(errfile)
@@ -199,7 +199,7 @@ def send_email(sys_args, emails, subject, message):
                     print 'Sent an email to %s' % email
                 else:
                     print 'Could not send an email to %s' % email
-                    print cmd.stderr
+                    print trim_if_needed(cmd.stderr)
     finally:
         os.remove(err_report)
 
@@ -221,6 +221,12 @@ def is_time_exceeded(sys_args, cmd):
         t_val = t_val * 60
 
     return cmd_time > t_val
+
+def trim_if_needed(txt, max_length=10000):
+    if len(txt) > max_length:
+        return 'START TRUNCATED... %s' % txt[-max_length:]
+    else:
+        return txt
 
 
 if __name__ == '__main__':
