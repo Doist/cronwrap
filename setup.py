@@ -9,7 +9,7 @@ import os
 from setuptools import setup
 
 setup(name='cronwrap',
-      version = '1.2',
+      version = '1.21',
       author="amix the lucky stiff",
       author_email="amix@amix.dk",
       url="http://www.amix.dk/",
