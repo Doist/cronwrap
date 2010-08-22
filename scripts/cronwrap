@@ -34,7 +34,7 @@ import os
 import argparse
 import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 #--- Handlers ----------------------------------------------
@@ -60,19 +60,11 @@ def handle_args(sys_args):
 
 def handle_success(sys_args, cmd):
     """Called if a command did finish succefully."""
-    out_str = []
-    out_str.append('cronwrap ran command succefully:')
-    out_str.append('%s\n' % sys_args.cmd)
-
-    out_str.append('The command finished:')
-    out_str.append('%s UTC\n' % datetime.utcnow())
-
-    out_str.append('The command ran for:')
-    out_str.append('%s seconds\n' % cmd.run_time)
-
-    out_str.append('STANDARD OUTPUT:')
-    out_str.append('%s\n' % trim_if_needed(cmd.stdout))
-    out_str = '\n'.join(out_str)
+    out_str = render_email_template(
+            'CRONWRAP RAN COMMAND SUCCEFULLY:',
+            sys_args,
+            cmd
+    )
 
     if sys_args.verbose:
         if sys_args.emails:
@@ -86,17 +78,11 @@ def handle_success(sys_args, cmd):
 
 def handle_timeout(sys_args, cmd):
     """Called if a command exceeds its running time."""
-    err_str = []
-    err_str.append("cronwrap detected a timeout on following command:")
-    err_str.append(sys_args.cmd)
-    err_str.append('')
-
-    err_str.append('The command ran for:\n%s seconds' % (cmd.run_time))
-    err_str.append('')
-
-    err_str.append('The timeout is set at:\n%s' % sys_args.time)
-
-    err_str = '\n'.join(err_str)
+    err_str = render_email_template(
+            "CRONWRAP DETECTED A TIMEOUT ON FOLLOWING COMMAND:",
+            sys_args,
+            cmd
+    )
 
     if sys_args.emails:
         send_email(sys_args,
@@ -109,27 +95,11 @@ def handle_timeout(sys_args, cmd):
 
 def handle_error(sys_args, cmd):
     """Called when a command did not finish succefully."""
-    err_str = []
-
-    err_str.append("cronwrap detected failure or error output for the command:")
-    err_str.append(sys_args.cmd)
-
-    err_str.append('')
-
-    err_str.append('RETURN CODE:')
-    err_str.append('%s' % cmd.returncode)
-
-    err_str.append('')
-
-    err_str.append('ERROR OUTPUT:')
-    err_str.append('%s' % trim_if_needed(cmd.stderr))
-
-    err_str.append('')
-
-    err_str.append('STANDARD OUTPUT:')
-    err_str.append('%s' % trim_if_needed(cmd.stdout))
-
-    err_str = '\n'.join(err_str)
+    err_str = render_email_template(
+            "CRONWRAP DETECTED FAILURE OR ERROR OUTPUT FOR THE COMMAND:",
+            sys_args,
+            cmd
+    )
 
     if sys_args.emails:
         send_email(sys_args,
@@ -140,6 +110,39 @@ def handle_error(sys_args, cmd):
         print err_str
 
     sys.exit(-1)
+
+
+def render_email_template(title, sys_args, cmd):
+    result_str = []
+
+    result_str.append(title)
+    result_str.append('%s\n' % sys_args.cmd)
+
+    result_str.append('COMMAND STARTED:')
+    result_str.append('%s UTC\n' % (datetime.utcnow() - timedelta(seconds=int(cmd.run_time))))
+
+    result_str.append('COMMAND FINISHED:')
+    result_str.append('%s UTC\n' % datetime.utcnow())
+
+    result_str.append('COMMAND RAN FOR:')
+    hours = cmd.run_time / 60 / 60
+    if cmd.run_time < 60:
+        hours = 0
+    result_str.append('%d seconds (%.2f hours)\n' % (cmd.run_time, hours))
+
+    result_str.append("COMMAND'S TIMEOUT IS SET AT:")
+    result_str.append('%s\n' % sys_args.time)
+
+    result_str.append('RETURN CODE WAS:')
+    result_str.append('%s\n' % cmd.returncode)
+
+    result_str.append('ERROR OUTPUT:')
+    result_str.append('%s\n' % trim_if_needed(cmd.stderr))
+
+    result_str.append('STANDARD OUTPUT:')
+    result_str.append('%s' % trim_if_needed(cmd.stdout))
+
+    return '\n'.join(result_str)
 
 
 def handle_test_email(sys_args):
@@ -225,7 +228,7 @@ def is_time_exceeded(sys_args, cmd):
 
 def trim_if_needed(txt, max_length=10000):
     if len(txt) > max_length:
-        return 'START TRUNCATED... %s' % txt[-max_length:]
+        return '... START TRUNCATED...\n%s' % txt[-max_length:]
     else:
         return txt
 
