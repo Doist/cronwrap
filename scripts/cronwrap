@@ -20,13 +20,13 @@
         #Will not send any reports:
         $ cronwrap -c "ls" -e cron@my_domain.com
 
-        #Will send a succefull report to cron@my_domain.com:
+        #Will send a successful report to cron@my_domain.com:
         $ cronwrap -c "ls" -e cron@my_domain.com -v
 
     :copyright: 2010 by Plurk
     :license: BSD
 """
-__VERSION__ = '1.121'
+__VERSION__ = '1.3'
 
 import sys
 import re
@@ -34,6 +34,7 @@ import os
 import argparse
 import tempfile
 import time
+import platform
 from datetime import datetime, timedelta
 
 
@@ -59,7 +60,7 @@ def handle_args(sys_args):
 
 
 def handle_success(sys_args, cmd):
-    """Called if a command did finish succefully."""
+    """Called if a command did finish successfuly."""
     out_str = render_email_template(
             'CRONWRAP RAN COMMAND SUCCEFULLY:',
             sys_args,
@@ -70,7 +71,7 @@ def handle_success(sys_args, cmd):
         if sys_args.emails:
             send_email(sys_args,
                        sys_args.emails,
-                       'cronwrap ran command succefully!',
+		       'Host %s: cronwrap ran command successfully!' % platform.node().capitalize(),
                        out_str)
         else:
             print out_str
@@ -87,14 +88,14 @@ def handle_timeout(sys_args, cmd):
     if sys_args.emails:
         send_email(sys_args,
                    sys_args.emails,
-                   'cronwrap detected a timeout!',
+		   'Host %s: cronwrap detected a timeout!' % platform.node().capitalize(),
                    err_str)
     else:
         print err_str
 
 
 def handle_error(sys_args, cmd):
-    """Called when a command did not finish succefully."""
+    """Called when a command did not finish successfully."""
     err_str = render_email_template(
             "CRONWRAP DETECTED FAILURE OR ERROR OUTPUT FOR THE COMMAND:",
             sys_args,
@@ -104,7 +105,7 @@ def handle_error(sys_args, cmd):
     if sys_args.emails:
         send_email(sys_args,
                    sys_args.emails,
-                   'cronwrap detected a failure!',
+		   'Host %s: cronwrap detected a failure!' % platform.node().capitalize(),
                    err_str)
     else:
         print err_str
@@ -148,7 +149,7 @@ def render_email_template(title, sys_args, cmd):
 def handle_test_email(sys_args):
     send_email(sys_args,
                sys_args.emails,
-               'cronwrap test mail',
+	       'Host %s: cronwrap test mail' % platform.node().capitalize(),
                'just a test mail, yo! :)')
 
 
@@ -251,6 +252,6 @@ if __name__ == '__main__':
 
     parser.add_argument('-v', '--verbose',
                              nargs='?', default=False,
-                             help='Will send an email / print to stdout on succefull run.')
+                             help='Will send an email / print to stdout on successful run.')
 
     handle_args(parser.parse_args())
