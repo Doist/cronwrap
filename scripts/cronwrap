@@ -7,7 +7,7 @@
     A cron job wrapper that wraps jobs and enables better error reporting and command timeouts.
 
     Example of usage::
-        
+
         #Will print out help
         $ cronwrap -h
 
@@ -44,7 +44,7 @@ def handle_args(sys_args):
     if not sys_args.time:
         sys_args.time = '1h'
 
-    if sys_args.verbose != False:
+    if sys_args.verbose is not False:
         sys_args.verbose = True
 
     if sys_args.cmd:
@@ -62,16 +62,17 @@ def handle_args(sys_args):
 def handle_success(sys_args, cmd):
     """Called if a command did finish successfuly."""
     out_str = render_email_template(
-            'CRONWRAP RAN COMMAND SUCCEFULLY:',
-            sys_args,
-            cmd
+        'CRONWRAP RAN COMMAND SUCCEFULLY:',
+        sys_args,
+        cmd
     )
 
     if sys_args.verbose:
         if sys_args.emails:
             send_email(sys_args,
                        sys_args.emails,
-		       'Host %s: cronwrap ran command successfully!' % platform.node().capitalize(),
+                       'Host %s: cronwrap ran command successfully!'
+                       % platform.node().capitalize(),
                        out_str)
         else:
             print out_str
@@ -80,15 +81,16 @@ def handle_success(sys_args, cmd):
 def handle_timeout(sys_args, cmd):
     """Called if a command exceeds its running time."""
     err_str = render_email_template(
-            "CRONWRAP DETECTED A TIMEOUT ON FOLLOWING COMMAND:",
-            sys_args,
-            cmd
+        "CRONWRAP DETECTED A TIMEOUT ON FOLLOWING COMMAND:",
+        sys_args,
+        cmd
     )
 
     if sys_args.emails:
         send_email(sys_args,
                    sys_args.emails,
-		   'Host %s: cronwrap detected a timeout!' % platform.node().capitalize(),
+                   'Host %s: cronwrap detected a timeout!'
+                   % platform.node().capitalize(),
                    err_str)
     else:
         print err_str
@@ -97,15 +99,16 @@ def handle_timeout(sys_args, cmd):
 def handle_error(sys_args, cmd):
     """Called when a command did not finish successfully."""
     err_str = render_email_template(
-            "CRONWRAP DETECTED FAILURE OR ERROR OUTPUT FOR THE COMMAND:",
-            sys_args,
-            cmd
+        "CRONWRAP DETECTED FAILURE OR ERROR OUTPUT FOR THE COMMAND:",
+        sys_args,
+        cmd
     )
 
     if sys_args.emails:
         send_email(sys_args,
                    sys_args.emails,
-		   'Host %s: cronwrap detected a failure!' % platform.node().capitalize(),
+                   'Host %s: cronwrap detected a failure!'
+                   % platform.node().capitalize(),
                    err_str)
     else:
         print err_str
@@ -120,7 +123,8 @@ def render_email_template(title, sys_args, cmd):
     result_str.append('%s\n' % sys_args.cmd)
 
     result_str.append('COMMAND STARTED:')
-    result_str.append('%s UTC\n' % (datetime.utcnow() - timedelta(seconds=int(cmd.run_time))))
+    result_str.append('%s UTC\n' % (datetime.utcnow() -
+                                    timedelta(seconds=int(cmd.run_time))))
 
     result_str.append('COMMAND FINISHED:')
     result_str.append('%s UTC\n' % datetime.utcnow())
@@ -149,7 +153,8 @@ def render_email_template(title, sys_args, cmd):
 def handle_test_email(sys_args):
     send_email(sys_args,
                sys_args.emails,
-	       'Host %s: cronwrap test mail' % platform.node().capitalize(),
+               'Host %s: cronwrap test mail'
+               % platform.node().capitalize(),
                'just a test mail, yo! :)')
 
 
@@ -193,11 +198,11 @@ def send_email(sys_args, emails, subject, message):
 
     try:
         for email in emails:
-            cmd = Command('mail -s "%s" %s < %s' %\
-                        (subject.replace('"', "'"),
-                         email,
-                         err_report)
-            )
+            cmd = Command('mail -s "%s" %s < %s' %
+                          (subject.replace('"', "'"),
+                           email,
+                           err_report)
+                          )
 
             if sys_args.verbose:
                 if cmd.returncode == 0:
@@ -227,6 +232,7 @@ def is_time_exceeded(sys_args, cmd):
 
     return cmd_time > t_val
 
+
 def trim_if_needed(txt, max_length=10000):
     if len(txt) > max_length:
         return '... START TRUNCATED...\n%s' % txt[-max_length:]
@@ -239,19 +245,21 @@ if __name__ == '__main__':
 
     parser.add_argument('-c', '--cmd', help='Run a command. Could be `cronwrap -c "ls -la"`.')
 
-    parser.add_argument('-e', '--emails', help='Email following users if the command crashes or exceeds timeout. '\
-                                                'Could be `cronwrap -e "johndoe@mail.com, marcy@mail.com"`. '\
-                                                "Uses system's `mail` to send emails. If no command (cmd) is set a test email is sent.")
+    parser.add_argument('-e', '--emails',
+                        help='Email following users if the command crashes or exceeds timeout. '
+                        'Could be `cronwrap -e "johndoe@mail.com, marcy@mail.com"`. '
+                        "Uses system's `mail` to send emails. If no command (cmd) is set a test email is sent.")
 
-    parser.add_argument('-t', '--time', help='Set the maximum running time.'\
-                                             'If this time is passed an alert email will be sent.'\
-                                             "The command will keep running even if maximum running time is exceeded."\
-                                             "The default is 1 hour `-t 1h`. "\
-                                             "Possible values include: `-t 2h`,`-t 2m`, `-t 30s`."
-                                             )
+    parser.add_argument('-t', '--time',
+                        help='Set the maximum running time.'
+                        'If this time is passed an alert email will be sent.'
+                        "The command will keep running even if maximum running time is exceeded."
+                        "The default is 1 hour `-t 1h`. "
+                        "Possible values include: `-t 2h`,`-t 2m`, `-t 30s`."
+                        )
 
     parser.add_argument('-v', '--verbose',
-                             nargs='?', default=False,
-                             help='Will send an email / print to stdout on successful run.')
+                        nargs='?', default=False,
+                        help='Will send an email / print to stdout on successful run.')
 
     handle_args(parser.parse_args())
