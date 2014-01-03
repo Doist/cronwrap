@@ -8,7 +8,7 @@ Installing
 ===========
 
 To install cronwrap simply do::
-    
+
     $ sudo easy_install cronwrap
     $ cronwrap -h
 
@@ -34,11 +34,14 @@ Basic example of usage::
                                 "johndoe@mail.com, marcy@mail.com"`. Uses system's
                                 `mail` to send emails. If no command (cmd) is set a
                                 test email is sent.
-          -t TIME, --time TIME  Set the maxium running time.If this time is passed an
-                                alert email will be sent.The command will keep running
-                                even if maxium running time is exceeded.The default is
-                                1 hour `-t 1h`. Possible values include: `-t 2h`,`-t
-                                2m`, `-t 30s`.
+          -t TIME, --time TIME  Set the maxium running time. If this time is passed an
+                                alert email will be sent once the command ends.
+                                The command will keep running even if maximum running time
+                                is exceeded. Please note that this option doesn't
+                                prevent the job from stalling and does nothing to
+                                prevent running multiple cron jobs at the same time.
+                                The default is 1 hour `-t 1h`. Possible values include:
+                                `-t 2h`,`-t 2m`, `-t 30s`.
           -v [VERBOSE], --verbose [VERBOSE]
                                 Will send an email / print to stdout on successful run.
 
