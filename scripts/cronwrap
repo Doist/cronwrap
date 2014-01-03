@@ -62,7 +62,7 @@ def handle_args(sys_args):
 def handle_success(sys_args, cmd):
     """Called if a command did finish successfuly."""
     out_str = render_email_template(
-        'CRONWRAP RAN COMMAND SUCCEFULLY:',
+        'CRONWRAP RAN COMMAND SUCCESSFULLY:',
         sys_args,
         cmd
     )
