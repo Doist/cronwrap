@@ -5,8 +5,12 @@
 # the Free Software Foundation, either version 3 of the License, or (at
 # your option) any later version.
 
-import os
+import sys
 from setuptools import setup
+
+install_requires = []
+if sys.version_info < (2, 7):
+    install_requires.append('argparse>=1.1')
 
 setup(name='cronwrap',
       version = '1.3',
@@ -22,12 +26,9 @@ setup(name='cronwrap',
         "Topic :: Software Development :: Libraries :: Python Modules",
       ],
 
-      install_requires=[
-          'argparse>=1.1'
-      ],
+      install_requires=install_requires,
 
       scripts=['scripts/cronwrap'],
-      packages=[''],
       platforms=["Any"],
       license="BSD",
       keywords='cron wrapper crontab cronjob',
