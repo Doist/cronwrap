@@ -75,7 +75,7 @@ def handle_success(sys_args, cmd):
                        % platform.node().capitalize(),
                        out_str)
         else:
-            print out_str
+            print(out_str)
 
 
 def handle_timeout(sys_args, cmd):
@@ -93,7 +93,7 @@ def handle_timeout(sys_args, cmd):
                    % platform.node().capitalize(),
                    err_str)
     else:
-        print err_str
+        print(err_str)
 
 
 def handle_error(sys_args, cmd):
@@ -111,7 +111,7 @@ def handle_error(sys_args, cmd):
                    % platform.node().capitalize(),
                    err_str)
     else:
-        print err_str
+        print(err_str)
 
     sys.exit(-1)
 
@@ -166,10 +166,10 @@ class Command:
        Example of usage::
 
            cmd = Command('ls')
-           print cmd.stdout
-           print cmd.stderr
-           print cmd.returncode
-           print cmd.run_time
+           print(cmd.stdout)
+           print(cmd.stderr)
+           print(cmd.returncode)
+           print(cmd.run_time)
     """
     def __init__(self, command):
         outfile = tempfile.mktemp()
@@ -206,10 +206,10 @@ def send_email(sys_args, emails, subject, message):
 
             if sys_args.verbose:
                 if cmd.returncode == 0:
-                    print 'Sent an email to %s' % email
+                    print('Sent an email to %s' % email)
                 else:
-                    print 'Could not send an email to %s' % email
-                    print trim_if_needed(cmd.stderr)
+                    print('Could not send an email to %s' % email)
+                    print(trim_if_needed(cmd.stderr))
     finally:
         os.remove(err_report)
 
